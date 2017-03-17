@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+						http://www.springframework.org/schema/beans/spring-beans.xsd
+						http://www.springframework.org/schema/mvc
+                        http://www.springframework.org/schema/mvc/spring-mvc.xsd
+                        http://www.springframework.org/schema/context
+                        http://www.springframework.org/schema/context/spring-context.xsd
+						">
+
+    <!-- ================================================================================================================ -->
+    <!-- 他的作用是式地向 Spring 容器注册
+    AutowiredAnnotationBeanPostProcessor、CommonAnnotationBeanPostProcessor、
+    PersistenceAnnotationBeanPostProcessor 以及 RequiredAnnotationBeanPostProcessor 这 4 个BeanPostProcessor。
+    注册这4个 BeanPostProcessor的作用，就是为了你的系统能够识别相应的注解。
+    如果你想使用@Autowired注解，那么就必须事先在 Spring 容器中声明 AutowiredAnnotationBeanPostProcessor Bean。
+    如果想使用@ Resource 、@ PostConstruct、@ PreDestroy等注解就必须声明CommonAnnotationBeanPostProcessor
+    如果想使用@PersistenceContext注解，就必须声明PersistenceAnnotationBeanPostProcessor的Bean。
+    如果想使用 @Required的注解，就必须声明RequiredAnnotationBeanPostProcessor的Bean。同样，传统的声明方式如下： -->
+    <!--  总之！  启用Spring基于annotation的DI, 使用户可以在Spring MVC中使用Spring的强大功能。 激活 @Required
+        @Autowired,JSR 250's @PostConstruct, @PreDestroy and @Resource 等标注 -->
+    <context:annotation-config />
+
+    <!--scan标签在拥有config标签的同时，可可以指定需要扫描的包的路径，以及指定扫描特定的标签，或者不扫描指定的标签-->
+    <context:component-scan base-package="com">
+        <context:exclude-filter type="annotation"
+                                expression="org.springframework.stereotype.Controller" />
+    </context:component-scan>
+
+    <!--注意！以上两者同时存在的时候，前者会被忽略。也就是那些@autowire，@resource等注入注解只会被注入一次
+   因此，一般来说因此当使用 <context:component-scan/> 后，
+   除非需要使用PersistenceAnnotationBeanPostProcessor和RequiredAnnotationBeanPostProcessor两个Processor的功能（例如JPA等）
+   否则就可以将 <context:annotation-config/> 移除了。-->
+    <!-- ================================================================================================================ -->
+
+    <!-- 扩充了注解驱动，可以将请求参数绑定到控制器参数 -->
+    <!--<mvc:annotation-driven/>表示在SpringMVC中注册了DefaultAnnotationHandlerMapping与AnnotationMethodHandlerAdapter 两个bean，
+    表示为@controller、@requestMapping做好准备工作，但是 此时被注解的bean并没有被加入到spring容器中，
+    此时需要用<context:component-scan base-package=""/>扫描并注册bean-->
+
+    <!-- 在4.x的版本中，DefaultAnnotationHandlerMapping与AnnotationMethodHandlerAdapter 这两个bean被  requestMappingHandlerMapping ，和 requestMappingHandlerAdapter 两个方法代替
+        即使使用了driven注解 ，也不会自动注册 DefaultAnnotationHandlerMapping与AnnotationMethodHandlerAdapter ，所以有没有这个注解关系不大
+    -->
+    <mvc:annotation-driven />
+
+    <!-- ********************************在3.x的版本，可以通过这种配置被handlerAdapter配置一些消息解析器，用于自动转换json，或者xml什么的，在4.x的版本之后，这些东西都会默认注册，字符集默认utf-8******************-->
+
+    <!--<bean class ="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter" >-->
+        <!--<property name="messageConverters">-->
+            <!--<list>-->
+                <!--<ref bean="stringHttpMessageConverter"></ref>-->
+                <!--<ref bean="mappingJackson2HttpMessageConverter"></ref>-->
+                <!--&lt;!&ndash;<ref bean="marshallingHttpMessageConverter"></ref>&ndash;&gt;-->
+            <!--</list>-->
+        <!--</property>-->
+    <!--</bean>-->
+
+    <!--<bean id="stringHttpMessageConverter" class="org.springframework.http.converter.StringHttpMessageConverter">-->
+        <!--<property name = "supportedMediaTypes">-->
+            <!--<list>-->
+                <!--<value>text/html;charset=UTF-8</value>-->
+            <!--</list>-->
+        <!--</property>-->
+    <!--</bean>-->
+
+    <!--<bean id="mappingJackson2HttpMessageConverter" class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter" >-->
+        <!--<property name="supportedMediaTypes">-->
+            <!--<list>-->
+                <!--<value>application/json;charset=UTF-8</value>-->
+            <!--</list>-->
+        <!--</property>-->
+    <!--</bean>-->
+
+    <!--<bean id="marshallingHttpMessageConverter" class="org.springframework.http.converter.xml.MarshallingHttpMessageConverter" >-->
+        <!--<property name="supportedMediaTypes">-->
+            <!--<list>-->
+                <!--<value>application/xml;charset=UTF-8</value>-->
+            <!--</list>-->
+        <!--</property>-->
+        <!--<property name = "defaultCharset">-->
+            <!--<value>UTF-8</value>-->
+        <!--</property>-->
+    <!--</bean>-->
+
+    <!--*****************************************结束**********************************************-->
+
+    <context:property-placeholder location="classpath:config-hibernate.properties,classpath:config-jdbc.properties"/>
+    <!--spring容器中最多只能定义一个context:property-placeholder-->
+    <!-- 扫描service自动注入为bean -->
+
+    <!--配置C3P0连接池 bean-->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+          destroy-method="close">
+        <property name="driverClass" value="${jdbc.driver}" />
+        <property name="jdbcUrl" value="${jdbc.url}" />
+        <property name="user" value="${jdbc.username}" />
+        <property name="password" value="${jdbc.password}" />
+
+        <!-- 请求超时时间 -->
+        <property name="checkoutTimeout" value="30000" />
+        <!-- 每60秒检查所有连接池中的空闲连接。默认值: 0，不检查 -->
+        <property name="idleConnectionTestPeriod" value="30" />
+        <!-- 连接数据库连接池最大空闲时间 -->
+        <property name="maxIdleTime" value="30" />
+        <!-- 连接池初始化连接数 -->
+        <property name="initialPoolSize" value="5" />
+        <property name="minPoolSize" value="5" />
+        <property name="maxPoolSize" value="20" />
+        <!--当连接池中的连接耗尽的时候c3p0一次同时获取的连接数。默认值: 3 -->
+        <property name="acquireIncrement" value="5" />
+    </bean>
+
+    <bean id="multipartResolver"
+          class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <!-- one of the properties available; the maximum file size in bytes -->
+        <property name="maxUploadSize" value="100000"/>
+    </bean>
+
+</beans>

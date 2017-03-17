@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+						http://www.springframework.org/schema/beans/spring-beans.xsd
+						http://www.springframework.org/schema/mvc
+                        http://www.springframework.org/schema/mvc/spring-mvc.xsd
+                        http://www.springframework.org/schema/context
+                        http://www.springframework.org/schema/context/spring-context.xsd
+						">
+
+    <!-- ================================================================================================================ -->
+    <!-- 他的作用是式地向 Spring 容器注册
+    AutowiredAnnotationBeanPostProcessor、CommonAnnotationBeanPostProcessor、
+    PersistenceAnnotationBeanPostProcessor 以及 RequiredAnnotationBeanPostProcessor 这 4 个BeanPostProcessor。
+    注册这4个 BeanPostProcessor的作用，就是为了你的系统能够识别相应的注解。
+    如果你想使用@Autowired注解，那么就必须事先在 Spring 容器中声明 AutowiredAnnotationBeanPostProcessor Bean。
+    如果想使用@ Resource 、@ PostConstruct、@ PreDestroy等注解就必须声明CommonAnnotationBeanPostProcessor
+    如果想使用@PersistenceContext注解，就必须声明PersistenceAnnotationBeanPostProcessor的Bean。
+    如果想使用 @Required的注解，就必须声明RequiredAnnotationBeanPostProcessor的Bean。同样，传统的声明方式如下： -->
+    <!--  总之！  启用Spring基于annotation的DI, 使用户可以在Spring MVC中使用Spring的强大功能。 激活 @Required
+        @Autowired,JSR 250's @PostConstruct, @PreDestroy and @Resource 等标注 -->
+    <context:annotation-config />
+
+    <!--scan标签在拥有config标签的同时，可可以指定需要扫描的包的路径，以及指定扫描特定的标签，或者不扫描指定的标签-->
+    <context:component-scan base-package="com">
+        <context:include-filter type="annotation"
+                                expression="org.springframework.stereotype.Controller" />
+    </context:component-scan>
+
+    <!--注意！以上两者同时存在的时候，前者会被忽略。也就是那些@autowire，@resource等注入注解只会被注入一次
+	因此，一般来说因此当使用 <context:component-scan/> 后，
+	除非需要使用PersistenceAnnotationBeanPostProcessor和equiredAnnotationBeanPostProcessor两个Processor的功能（例如JPA等）
+	否则就可以将 <context:annotation-config/> 移除了。-->
+    <!-- ================================================================================================================ -->
+
+    <!-- 扩充了注解驱动，可以将请求参数绑定到控制器参数 -->
+    <!--<mvc:annotation-driven/>表示在SpringMVC中注册了DefaultAnnotationHandlerMapping与AnnotationMethodHandlerAdapter 两个bean，
+    表示为@controller、@requestMapping做好准备工作，但是 此时被注解的bean并没有被加入到spring容器中，
+    此时需要用<context:component-scan base-package=""/>扫描并注册bean-->
+    <mvc:annotation-driven />
+
+    <!-- 静态资源处理， css， js， imgs -->
+    <!-- 配置之后，再请求类似imgs的静态资源 就不会经过DispatcherServlet了 -->
+    <mvc:resources mapping="/style/**" location="/style/" />
+
+    <!-- 对模型视图名称的解析，即在模型视图名称添加前后缀 -->
+    <bean
+            class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="viewClass"
+                  value="org.springframework.web.servlet.view.JstlView" />
+        <property name="prefix" value="/WEB-INF/page" />
+        <property name="suffix" value=".jsp" />
+    </bean>
+
+</beans>
